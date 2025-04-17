@@ -1,0 +1,1378 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-search.css">
+        <link rel="stylesheet" href="css/filter.css">
+<link rel="stylesheet" href="css/nouislider.min.css">
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>BẢN ĐỒ PHÂN BỐ CHÙA SÓC TRĂNG</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
+        <script src="js/leaflet-search.js"></script>
+        <script src="js/tailDT.js"></script>
+<script src="js/nouislider.min.js"></script>
+<script src="js/wNumb.js"></script>
+        <script src="data/SocTrang_Huyen_1.js"></script>
+        <script src="data/Lopduong_2.js"></script>
+        <script src="data/Phanhangcapkhoantuoi_3.js"></script>
+        <script src="data/Phancaphangchua_4.js"></script>
+        <script src="data/Phanhangcapcachuyen_5.js"></script>
+        <script src="data/Lopsong_6.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+            highlightLayer.openPopup();
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[9.104571859617298,105.24528140464052],[10.040721155058325,106.76775578512094]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var title = new L.Control({'position':'topright'});
+        title.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+        title.update = function () {
+            this._div.innerHTML = '<h2>BẢN ĐỒ PHÂN BỐ CHÙA SÓC TRĂNG</h2>';
+        };
+        title.addTo(map);
+        var abstract = new L.Control({'position':'bottomright'});
+        abstract.onAdd = function (map) {
+            this._div = L.DomUtil.create('div',
+            'leaflet-control abstract');
+            this._div.id = 'abstract'
+                this._div.setAttribute("onmouseenter", "abstract.show()");
+                this._div.setAttribute("onmouseleave", "abstract.hide()");
+                this.hide();
+                return this._div;
+            };
+            abstract.hide = function () {
+                this._div.classList.remove("abstractUncollapsed");
+                this._div.classList.add("abstract");
+                this._div.innerHTML = 'i'
+            }
+            abstract.show = function () {
+                this._div.classList.remove("abstract");
+                this._div.classList.add("abstractUncollapsed");
+                this._div.innerHTML = 'Bản đồ các chùa ở Sóc Trăng giúp người xem dễ dàng định vị và khám phá hệ thống chùa chiền đặc sắc của tỉnh, nổi bật với các ngôi chùa Khmer như Chùa Dơi, Chùa Đất Sét, Chùa Kh’leang hay Chùa Som Rong. Đây là công cụ hữu ích cho du khách trong hành trình tìm hiểu văn hóa – tín ngưỡng đặc trưng của vùng đất Nam Bộ.';
+        };
+        abstract.addTo(map);
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_Positronretina_0');
+        map.getPane('pane_Positronretina_0').style.zIndex = 400;
+        var layer_Positronretina_0 = L.tileLayer('https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png', {
+            pane: 'pane_Positronretina_0',
+            opacity: 1.0,
+            attribution: '<a href="https://cartodb.com/basemaps/">Map tiles by CartoDB, under CC BY 3.0. Data by OpenStreetMap, under ODbL.</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 20
+        });
+        layer_Positronretina_0;
+        map.addLayer(layer_Positronretina_0);
+        function pop_SocTrang_Huyen_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">NAME_2</th>\
+                        <td>' + (feature.properties['NAME_2'] !== null ? autolinker.link(String(feature.properties['NAME_2']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_SocTrang_Huyen_1_0(feature) {
+            switch(String(feature.properties['NAME_2'])) {
+                case 'Châu Thành':
+                    return {
+                pane: 'pane_SocTrang_Huyen_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(215,25,28,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Cù Lao Dung':
+                    return {
+                pane: 'pane_SocTrang_Huyen_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(230,85,56,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kế Sách':
+                    return {
+                pane: 'pane_SocTrang_Huyen_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(245,144,83,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Long Phú':
+                    return {
+                pane: 'pane_SocTrang_Huyen_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(253,190,116,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Mỹ Tú':
+                    return {
+                pane: 'pane_SocTrang_Huyen_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,223,153,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Mỹ Xuyên':
+                    return {
+                pane: 'pane_SocTrang_Huyen_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,255,191,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Ngã Năm':
+                    return {
+                pane: 'pane_SocTrang_Huyen_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(221,241,180,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Sóc Trăng':
+                    return {
+                pane: 'pane_SocTrang_Huyen_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(188,228,169,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Thạnh Trị':
+                    return {
+                pane: 'pane_SocTrang_Huyen_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(145,203,168,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Trần Đề':
+                    return {
+                pane: 'pane_SocTrang_Huyen_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(94,167,177,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Vĩnh Châu':
+                    return {
+                pane: 'pane_SocTrang_Huyen_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(43,131,186,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_SocTrang_Huyen_1');
+        map.getPane('pane_SocTrang_Huyen_1').style.zIndex = 401;
+        map.getPane('pane_SocTrang_Huyen_1').style['mix-blend-mode'] = 'normal';
+        var layer_SocTrang_Huyen_1 = new L.geoJson(json_SocTrang_Huyen_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_SocTrang_Huyen_1',
+            layerName: 'layer_SocTrang_Huyen_1',
+            pane: 'pane_SocTrang_Huyen_1',
+            onEachFeature: pop_SocTrang_Huyen_1,
+            style: style_SocTrang_Huyen_1_0,
+        });
+        bounds_group.addLayer(layer_SocTrang_Huyen_1);
+        map.addLayer(layer_SocTrang_Huyen_1);
+        function pop_Lopduong_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">F_CODE_DES</th>\
+                        <td>' + (feature.properties['F_CODE_DES'] !== null ? autolinker.link(String(feature.properties['F_CODE_DES']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">ISOCOUNTRY</th>\
+                        <td>' + (feature.properties['ISOCOUNTRY'] !== null ? autolinker.link(String(feature.properties['ISOCOUNTRY']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Lopduong_2_0() {
+            return {
+                pane: 'pane_Lopduong_2',
+                opacity: 1,
+                color: 'rgba(125,139,143,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Lopduong_2');
+        map.getPane('pane_Lopduong_2').style.zIndex = 402;
+        map.getPane('pane_Lopduong_2').style['mix-blend-mode'] = 'normal';
+        var layer_Lopduong_2 = new L.geoJson(json_Lopduong_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Lopduong_2',
+            layerName: 'layer_Lopduong_2',
+            pane: 'pane_Lopduong_2',
+            onEachFeature: pop_Lopduong_2,
+            style: style_Lopduong_2_0,
+        });
+        bounds_group.addLayer(layer_Lopduong_2);
+        map.addLayer(layer_Lopduong_2);
+        function pop_Phanhangcapkhoantuoi_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Tên Chùa</th>\
+                        <td>' + (feature.properties['Tên Chùa'] !== null ? autolinker.link(String(feature.properties['Tên Chùa']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Tên Khmer</th>\
+                        <td>' + (feature.properties['Tên Khmer'] !== null ? autolinker.link(String(feature.properties['Tên Khmer']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Tenviet</th>\
+                        <td>' + (feature.properties['Tenviet'] !== null ? autolinker.link(String(feature.properties['Tenviet']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Namxaydung</th>\
+                        <td>' + (feature.properties['Namxaydung'] !== null ? autolinker.link(String(feature.properties['Namxaydung']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Diachi</th>\
+                        <td>' + (feature.properties['Diachi'] !== null ? autolinker.link(String(feature.properties['Diachi']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Tuoi</th>\
+                        <td>' + (feature.properties['Tuoi'] !== null ? autolinker.link(String(feature.properties['Tuoi']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Khoan tuoi chua</th>\
+                        <td>' + (feature.properties['Khoan tuoi chua'] !== null ? autolinker.link(String(feature.properties['Khoan tuoi chua']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Tuoi chua den 2025</th>\
+                        <td>' + (feature.properties['Tuoi chua den 2025'] !== null ? autolinker.link(String(feature.properties['Tuoi chua den 2025']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Phanhangcapkhoantuoi_3_0(feature) {
+            switch(String(feature.properties['Khoan tuoi chua'])) {
+                case '<50':
+                    return {
+                pane: 'pane_Phanhangcapkhoantuoi_3',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(205,135,74,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '>500':
+                    return {
+                pane: 'pane_Phanhangcapkhoantuoi_3',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(143,91,203,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '100-300':
+                    return {
+                pane: 'pane_Phanhangcapkhoantuoi_3',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(213,18,125,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '300-500':
+                    return {
+                pane: 'pane_Phanhangcapkhoantuoi_3',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(103,215,155,1.0)',
+                interactive: true,
+            }
+                    break;
+                case '50-100':
+                    return {
+                pane: 'pane_Phanhangcapkhoantuoi_3',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(143,237,36,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_Phanhangcapkhoantuoi_3');
+        map.getPane('pane_Phanhangcapkhoantuoi_3').style.zIndex = 403;
+        map.getPane('pane_Phanhangcapkhoantuoi_3').style['mix-blend-mode'] = 'normal';
+        var layer_Phanhangcapkhoantuoi_3 = new L.geoJson(json_Phanhangcapkhoantuoi_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Phanhangcapkhoantuoi_3',
+            layerName: 'layer_Phanhangcapkhoantuoi_3',
+            pane: 'pane_Phanhangcapkhoantuoi_3',
+            onEachFeature: pop_Phanhangcapkhoantuoi_3,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_Phanhangcapkhoantuoi_3_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Phanhangcapkhoantuoi_3);
+        map.addLayer(layer_Phanhangcapkhoantuoi_3);
+        function pop_Phancaphangchua_4(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Tên Chùa</th>\
+                        <td>' + (feature.properties['Tên Chùa'] !== null ? autolinker.link(String(feature.properties['Tên Chùa']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Tên Khmer</th>\
+                        <td>' + (feature.properties['Tên Khmer'] !== null ? autolinker.link(String(feature.properties['Tên Khmer']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Tenviet</th>\
+                        <td>' + (feature.properties['Tenviet'] !== null ? autolinker.link(String(feature.properties['Tenviet']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Namxaydung</th>\
+                        <td>' + (feature.properties['Namxaydung'] !== null ? autolinker.link(String(feature.properties['Namxaydung']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Diachi</th>\
+                        <td>' + (feature.properties['Diachi'] !== null ? autolinker.link(String(feature.properties['Diachi']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Tuoi</th>\
+                        <td>' + (feature.properties['Tuoi'] !== null ? autolinker.link(String(feature.properties['Tuoi']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Phan cap chua</th>\
+                        <td>' + (feature.properties['Phan cap chua'] !== null ? autolinker.link(String(feature.properties['Phan cap chua']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Phancaphangchua_4_0(feature) {
+            switch(String(feature.properties['Phan cap chua'])) {
+                case 'Công  trình chưa xếp hạng':
+                    return {
+                pane: 'pane_Phancaphangchua_4',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(205,168,98,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Di tích kiến trúc nghệ thuật cấp quốc gia':
+                    return {
+                pane: 'pane_Phancaphangchua_4',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(20,211,87,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Di tích kiến trúc nghệ thuật cấp tỉnh':
+                    return {
+                pane: 'pane_Phancaphangchua_4',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(217,60,228,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Di tích lịch sử cách mạng cấp tỉnh':
+                    return {
+                pane: 'pane_Phancaphangchua_4',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(225,23,63,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Di tích lịch sử văn hóa cách mạng cấp tỉnh':
+                    return {
+                pane: 'pane_Phancaphangchua_4',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(83,179,205,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Di tích lịch sử văn hóa cấp tỉnh':
+                    return {
+                pane: 'pane_Phancaphangchua_4',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(51,37,201,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_Phancaphangchua_4');
+        map.getPane('pane_Phancaphangchua_4').style.zIndex = 404;
+        map.getPane('pane_Phancaphangchua_4').style['mix-blend-mode'] = 'normal';
+        var layer_Phancaphangchua_4 = new L.geoJson(json_Phancaphangchua_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Phancaphangchua_4',
+            layerName: 'layer_Phancaphangchua_4',
+            pane: 'pane_Phancaphangchua_4',
+            onEachFeature: pop_Phancaphangchua_4,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_Phancaphangchua_4_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Phancaphangchua_4);
+        map.addLayer(layer_Phancaphangchua_4);
+        function pop_Phanhangcapcachuyen_5(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Tên Chùa</th>\
+                        <td>' + (feature.properties['Tên Chùa'] !== null ? autolinker.link(String(feature.properties['Tên Chùa']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Tên Khmer</th>\
+                        <td>' + (feature.properties['Tên Khmer'] !== null ? autolinker.link(String(feature.properties['Tên Khmer']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Tenviet</th>\
+                        <td>' + (feature.properties['Tenviet'] !== null ? autolinker.link(String(feature.properties['Tenviet']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Namxaydung</th>\
+                        <td>' + (feature.properties['Namxaydung'] !== null ? autolinker.link(String(feature.properties['Namxaydung']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Diachi</th>\
+                        <td>' + (feature.properties['Diachi'] !== null ? autolinker.link(String(feature.properties['Diachi']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Tuoi</th>\
+                        <td>' + (feature.properties['Tuoi'] !== null ? autolinker.link(String(feature.properties['Tuoi']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Huyen</th>\
+                        <td>' + (feature.properties['Huyen'] !== null ? autolinker.link(String(feature.properties['Huyen']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Phanhangcapcachuyen_5_0(feature) {
+            switch(String(feature.properties['Huyen'])) {
+                case 'HUYỆN CHÂU THÀNH':
+                    return {
+                pane: 'pane_Phanhangcapcachuyen_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(101,217,235,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'HUYỆN CÙ LAO DUNG':
+                    return {
+                pane: 'pane_Phanhangcapcachuyen_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(231,129,116,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'HUYỆN KẾ SÁCH':
+                    return {
+                pane: 'pane_Phanhangcapcachuyen_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(65,211,155,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'HUYỆN LONG PHÚ':
+                    return {
+                pane: 'pane_Phanhangcapcachuyen_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(102,147,224,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'HUYỆN MỸ TÚ':
+                    return {
+                pane: 'pane_Phanhangcapcachuyen_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(127,234,61,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'HUYỆN MỸ XUYÊN':
+                    return {
+                pane: 'pane_Phanhangcapcachuyen_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(75,57,216,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'HUYỆN NGÃ NĂM':
+                    return {
+                pane: 'pane_Phanhangcapcachuyen_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(211,152,57,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'HUYỆN THẠNH TRỊ':
+                    return {
+                pane: 'pane_Phanhangcapcachuyen_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(204,27,183,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'HUYỆN TRẦN ĐỀ':
+                    return {
+                pane: 'pane_Phanhangcapcachuyen_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(191,204,92,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'THÀNH PHỐ SÓC TRĂNG':
+                    return {
+                pane: 'pane_Phanhangcapcachuyen_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(172,106,212,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'THỊ XÃ VĨNH CHÂU':
+                    return {
+                pane: 'pane_Phanhangcapcachuyen_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(107,229,121,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_Phanhangcapcachuyen_5');
+        map.getPane('pane_Phanhangcapcachuyen_5').style.zIndex = 405;
+        map.getPane('pane_Phanhangcapcachuyen_5').style['mix-blend-mode'] = 'normal';
+        var layer_Phanhangcapcachuyen_5 = new L.geoJson(json_Phanhangcapcachuyen_5, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Phanhangcapcachuyen_5',
+            layerName: 'layer_Phanhangcapcachuyen_5',
+            pane: 'pane_Phanhangcapcachuyen_5',
+            onEachFeature: pop_Phanhangcapcachuyen_5,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_Phanhangcapcachuyen_5_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Phanhangcapcachuyen_5);
+        map.addLayer(layer_Phanhangcapcachuyen_5);
+        function pop_Lopsong_6(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">COUNTRY</th>\
+                        <td>' + (feature.properties['COUNTRY'] !== null ? autolinker.link(String(feature.properties['COUNTRY']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">NAME</th>\
+                        <td>' + (feature.properties['NAME'] !== null ? autolinker.link(String(feature.properties['NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Lopsong_6_0() {
+            return {
+                pane: 'pane_Lopsong_6',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(229,182,54,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Lopsong_6');
+        map.getPane('pane_Lopsong_6').style.zIndex = 406;
+        map.getPane('pane_Lopsong_6').style['mix-blend-mode'] = 'normal';
+        var layer_Lopsong_6 = new L.geoJson(json_Lopsong_6, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Lopsong_6',
+            layerName: 'layer_Lopsong_6',
+            pane: 'pane_Lopsong_6',
+            onEachFeature: pop_Lopsong_6,
+            style: style_Lopsong_6_0,
+        });
+        bounds_group.addLayer(layer_Lopsong_6);
+        map.addLayer(layer_Lopsong_6);
+        var osmGeocoder = new L.Control.Geocoder({
+            collapsed: true,
+            position: 'topleft',
+            text: 'Search',
+            title: 'Testing'
+        }).addTo(map);
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .className += ' fa fa-search';
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .title += 'Search for a place';
+        var overlaysTree = [
+            {label: '<img src="legend/Lopsong_6.png" /> Lop song', layer: layer_Lopsong_6},
+            {label: 'Phan hang cap cac huyen<br /><table><tr><td style="text-align: center;"><img src="legend/Phanhangcapcachuyen_5_HUYỆNCHÂUTHÀNH0.png" /></td><td>HUYỆN CHÂU THÀNH</td></tr><tr><td style="text-align: center;"><img src="legend/Phanhangcapcachuyen_5_HUYỆNCÙLAODUNG1.png" /></td><td>HUYỆN CÙ LAO DUNG</td></tr><tr><td style="text-align: center;"><img src="legend/Phanhangcapcachuyen_5_HUYỆNKẾSÁCH2.png" /></td><td>HUYỆN KẾ SÁCH</td></tr><tr><td style="text-align: center;"><img src="legend/Phanhangcapcachuyen_5_HUYỆNLONGPHÚ3.png" /></td><td>HUYỆN LONG PHÚ</td></tr><tr><td style="text-align: center;"><img src="legend/Phanhangcapcachuyen_5_HUYỆNMỸTÚ4.png" /></td><td>HUYỆN MỸ TÚ</td></tr><tr><td style="text-align: center;"><img src="legend/Phanhangcapcachuyen_5_HUYỆNMỸXUYÊN5.png" /></td><td>HUYỆN MỸ XUYÊN</td></tr><tr><td style="text-align: center;"><img src="legend/Phanhangcapcachuyen_5_HUYỆNNGÃNĂM6.png" /></td><td>HUYỆN NGÃ NĂM</td></tr><tr><td style="text-align: center;"><img src="legend/Phanhangcapcachuyen_5_HUYỆNTHẠNHTRỊ7.png" /></td><td>HUYỆN THẠNH TRỊ</td></tr><tr><td style="text-align: center;"><img src="legend/Phanhangcapcachuyen_5_HUYỆNTRẦNĐỀ8.png" /></td><td>HUYỆN TRẦN ĐỀ</td></tr><tr><td style="text-align: center;"><img src="legend/Phanhangcapcachuyen_5_THÀNHPHỐSÓCTRĂNG9.png" /></td><td>THÀNH PHỐ SÓC TRĂNG</td></tr><tr><td style="text-align: center;"><img src="legend/Phanhangcapcachuyen_5_THỊXÃVĨNHCHÂU10.png" /></td><td>THỊ XÃ VĨNH CHÂU</td></tr></table>', layer: layer_Phanhangcapcachuyen_5},
+            {label: 'Phan cap hang chua<br /><table><tr><td style="text-align: center;"><img src="legend/Phancaphangchua_4_Côngtrìnhchưaxếphạng0.png" /></td><td>Công  trình chưa xếp hạng</td></tr><tr><td style="text-align: center;"><img src="legend/Phancaphangchua_4_Ditíchkiếntrúcnghệthuậtcấpquốcgia1.png" /></td><td>Di tích kiến trúc nghệ thuật cấp quốc gia</td></tr><tr><td style="text-align: center;"><img src="legend/Phancaphangchua_4_Ditíchkiếntrúcnghệthuậtcấptỉnh2.png" /></td><td>Di tích kiến trúc nghệ thuật cấp tỉnh</td></tr><tr><td style="text-align: center;"><img src="legend/Phancaphangchua_4_Ditíchlịchsửcáchmạngcấptỉnh3.png" /></td><td>Di tích lịch sử cách mạng cấp tỉnh</td></tr><tr><td style="text-align: center;"><img src="legend/Phancaphangchua_4_Ditíchlịchsửvănhóacáchmạngcấptỉnh4.png" /></td><td>Di tích lịch sử văn hóa cách mạng cấp tỉnh</td></tr><tr><td style="text-align: center;"><img src="legend/Phancaphangchua_4_Ditíchlịchsửvănhóacấptỉnh5.png" /></td><td>Di tích lịch sử văn hóa cấp tỉnh</td></tr></table>', layer: layer_Phancaphangchua_4},
+            {label: 'Phan hang cap khoan tuoi <br /><table><tr><td style="text-align: center;"><img src="legend/Phanhangcapkhoantuoi_3_500.png" /></td><td><50</td></tr><tr><td style="text-align: center;"><img src="legend/Phanhangcapkhoantuoi_3_5001.png" /></td><td>>500</td></tr><tr><td style="text-align: center;"><img src="legend/Phanhangcapkhoantuoi_3_1003002.png" /></td><td>100-300</td></tr><tr><td style="text-align: center;"><img src="legend/Phanhangcapkhoantuoi_3_3005003.png" /></td><td>300-500</td></tr><tr><td style="text-align: center;"><img src="legend/Phanhangcapkhoantuoi_3_501004.png" /></td><td>50-100</td></tr></table>', layer: layer_Phanhangcapkhoantuoi_3},
+            {label: '<img src="legend/Lopduong_2.png" /> Lop duong', layer: layer_Lopduong_2},
+            {label: 'SocTrang_Huyen<br /><table><tr><td style="text-align: center;"><img src="legend/SocTrang_Huyen_1_ChâuThành0.png" /></td><td>Châu Thành</td></tr><tr><td style="text-align: center;"><img src="legend/SocTrang_Huyen_1_CùLaoDung1.png" /></td><td>Cù Lao Dung</td></tr><tr><td style="text-align: center;"><img src="legend/SocTrang_Huyen_1_KếSách2.png" /></td><td>Kế Sách</td></tr><tr><td style="text-align: center;"><img src="legend/SocTrang_Huyen_1_LongPhú3.png" /></td><td>Long Phú</td></tr><tr><td style="text-align: center;"><img src="legend/SocTrang_Huyen_1_MỹTú4.png" /></td><td>Mỹ Tú</td></tr><tr><td style="text-align: center;"><img src="legend/SocTrang_Huyen_1_MỹXuyên5.png" /></td><td>Mỹ Xuyên</td></tr><tr><td style="text-align: center;"><img src="legend/SocTrang_Huyen_1_NgãNăm6.png" /></td><td>Ngã Năm</td></tr><tr><td style="text-align: center;"><img src="legend/SocTrang_Huyen_1_SócTrăng7.png" /></td><td>Sóc Trăng</td></tr><tr><td style="text-align: center;"><img src="legend/SocTrang_Huyen_1_ThạnhTrị8.png" /></td><td>Thạnh Trị</td></tr><tr><td style="text-align: center;"><img src="legend/SocTrang_Huyen_1_TrầnĐề9.png" /></td><td>Trần Đề</td></tr><tr><td style="text-align: center;"><img src="legend/SocTrang_Huyen_1_VĩnhChâu10.png" /></td><td>Vĩnh Châu</td></tr></table>', layer: layer_SocTrang_Huyen_1},
+            {label: "Positron (retina)", layer: layer_Positronretina_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        var i = 0;
+        layer_SocTrang_Huyen_1.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['NAME_2'] !== null?String('<div style="color: #323232; font-size: 9pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['NAME_2']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_SocTrang_Huyen_1'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        map.addControl(new L.Control.Search({
+            layer: layer_Phancaphangchua_4,
+            initial: false,
+            hideMarkerOnCollapse: true,
+            propertyName: 'Tên Khmer'}));
+        document.getElementsByClassName('search-button')[0].className +=
+         ' fa fa-binoculars';
+        var mapDiv = document.getElementById('map');
+        var row = document.createElement('div');
+        row.className="row";
+        row.id="all";
+        row.style.height = "100%";
+        var col1 = document.createElement('div');
+        col1.className="col9";
+        col1.id = "mapWindow";
+        col1.style.height = "99%";
+        col1.style.width = "80%";
+        col1.style.display = "inline-block";
+        var col2 = document.createElement('div');
+        col2.className="col3";
+        col2.id = "menu";
+        col2.style.display = "inline-block";
+        mapDiv.parentNode.insertBefore(row, mapDiv);
+        document.getElementById("all").appendChild(col1);
+        document.getElementById("all").appendChild(col2);
+        col1.appendChild(mapDiv)
+        var Filters = {"Phan cap chua": "str","Huyen": "str","Khoan tuoi chua": "str"};
+        function filterFunc() {
+          map.eachLayer(function(lyr){
+          if ("options" in lyr && "dataVar" in lyr["options"]){
+            features = this[lyr["options"]["dataVar"]].features.slice(0);
+            try{
+              for (key in Filters){
+                keyS = key.replace(/[^a-zA-Z0-9_]/g, "")
+                if (Filters[key] == "str" || Filters[key] == "bool"){
+                  var selection = [];
+                  var options = document.getElementById("sel_" + keyS).options
+                  for (var i=0; i < options.length; i++) {
+                    if (options[i].selected) selection.push(options[i].value);
+                  }
+                    try{
+                      if (key in features[0].properties){
+                        for (i = features.length - 1;
+                          i >= 0; --i){
+                          if (selection.indexOf(
+                          features[i].properties[key])<0
+                          && selection.length>0) {
+                          features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                  }
+                }
+                if (Filters[key] == "int"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (parseInt(features[i].properties[key])
+                          < sliderVals[0]
+                          || parseInt(features[i].properties[key])
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "real"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (features[i].properties[key]
+                          < sliderVals[0]
+                          || features[i].properties[key]
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "date"
+                  || Filters[key] == "datetime"
+                  || Filters[key] == "time"){
+                  try{
+                    if (key in features[0].properties){
+                      HTMLkey = key.replace(/[&\/\\#,+()$~%.'":*?<>{} ]/g, '');
+                      startdate = document.getElementById("dat_" +
+                        HTMLkey + "_date1").value.replace(" ", "T");
+                      enddate = document.getElementById("dat_" +
+                        HTMLkey + "_date2").value.replace(" ", "T");
+                      for (i = features.length - 1; i >= 0; --i){
+                        if (features[i].properties[key] < startdate
+                          || features[i].properties[key] > enddate){
+                          features.splice(i,1);
+                        }
+                      }
+                    }
+                  } catch(err){
+                  }
+                }
+              }
+            } catch(err){
+            }
+          this[lyr["options"]["layerName"]].clearLayers();
+          this[lyr["options"]["layerName"]].addData(features);
+        var i = 0;
+        layer_SocTrang_Huyen_1.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['NAME_2'] !== null?String('<div style="color: #323232; font-size: 9pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['NAME_2']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_SocTrang_Huyen_1'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+          }
+          })
+        }
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Phancapchua = document.createElement('div');
+            div_Phancapchua.id = "div_Phancapchua";
+            div_Phancapchua.className= "filterselect";
+            document.getElementById("menu").appendChild(div_Phancapchua);
+            sel_Phancapchua = document.createElement('select');
+            sel_Phancapchua.multiple = true;
+            sel_Phancapchua.size = 7;
+            sel_Phancapchua.id = "sel_Phancapchua";
+            var Phancapchua_options_str = "<option value='' unselected></option>";
+            sel_Phancapchua.onchange = function(){filterFunc()};
+            Phancapchua_options_str  += '<option value="NULL">NULL</option>';
+            Phancapchua_options_str  += '<option value="Công  trình chưa xếp hạng">Công  trình chưa xếp hạng</option>';
+            Phancapchua_options_str  += '<option value="Di tích kiến trúc nghệ thuật cấp quốc gia">Di tích kiến trúc nghệ thuật cấp quốc gia</option>';
+            Phancapchua_options_str  += '<option value="Di tích kiến trúc nghệ thuật cấp tỉnh">Di tích kiến trúc nghệ thuật cấp tỉnh</option>';
+            Phancapchua_options_str  += '<option value="Di tích lịch sử cách mạng cấp tỉnh">Di tích lịch sử cách mạng cấp tỉnh</option>';
+            Phancapchua_options_str  += '<option value="Di tích lịch sử văn hóa cách mạng cấp tỉnh">Di tích lịch sử văn hóa cách mạng cấp tỉnh</option>';
+            Phancapchua_options_str  += '<option value="Di tích lịch sử văn hóa cấp tỉnh">Di tích lịch sử văn hóa cấp tỉnh</option>';
+            sel_Phancapchua.innerHTML = Phancapchua_options_str;
+            div_Phancapchua.appendChild(sel_Phancapchua);
+            var lab_Phancapchua = document.createElement('div');
+            lab_Phancapchua.innerHTML = 'Phan cap chua';
+            lab_Phancapchua.className = 'filterlabel';
+            div_Phancapchua.appendChild(lab_Phancapchua);
+            var reset_Phancapchua = document.createElement('div');
+            reset_Phancapchua.innerHTML = 'clear filter';
+            reset_Phancapchua.className = 'filterlabel';
+            reset_Phancapchua.onclick = function() {
+                var options = document.getElementById("sel_Phancapchua").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_Phancapchua.appendChild(reset_Phancapchua);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Huyen = document.createElement('div');
+            div_Huyen.id = "div_Huyen";
+            div_Huyen.className= "filterselect";
+            document.getElementById("menu").appendChild(div_Huyen);
+            sel_Huyen = document.createElement('select');
+            sel_Huyen.multiple = true;
+            sel_Huyen.size = 10;
+            sel_Huyen.id = "sel_Huyen";
+            var Huyen_options_str = "<option value='' unselected></option>";
+            sel_Huyen.onchange = function(){filterFunc()};
+            Huyen_options_str  += '<option value="HUYỆN CHÂU THÀNH">HUYỆN CHÂU THÀNH</option>';
+            Huyen_options_str  += '<option value="HUYỆN CÙ LAO DUNG">HUYỆN CÙ LAO DUNG</option>';
+            Huyen_options_str  += '<option value="HUYỆN KẾ SÁCH">HUYỆN KẾ SÁCH</option>';
+            Huyen_options_str  += '<option value="HUYỆN LONG PHÚ">HUYỆN LONG PHÚ</option>';
+            Huyen_options_str  += '<option value="HUYỆN MỸ TÚ">HUYỆN MỸ TÚ</option>';
+            Huyen_options_str  += '<option value="HUYỆN MỸ XUYÊN">HUYỆN MỸ XUYÊN</option>';
+            Huyen_options_str  += '<option value="HUYỆN NGÃ NĂM">HUYỆN NGÃ NĂM</option>';
+            Huyen_options_str  += '<option value="HUYỆN THẠNH TRỊ">HUYỆN THẠNH TRỊ</option>';
+            Huyen_options_str  += '<option value="HUYỆN TRẦN ĐỀ">HUYỆN TRẦN ĐỀ</option>';
+            Huyen_options_str  += '<option value="THÀNH PHỐ SÓC TRĂNG">THÀNH PHỐ SÓC TRĂNG</option>';
+            Huyen_options_str  += '<option value="THỊ XÃ VĨNH CHÂU">THỊ XÃ VĨNH CHÂU</option>';
+            sel_Huyen.innerHTML = Huyen_options_str;
+            div_Huyen.appendChild(sel_Huyen);
+            var lab_Huyen = document.createElement('div');
+            lab_Huyen.innerHTML = 'Huyen';
+            lab_Huyen.className = 'filterlabel';
+            div_Huyen.appendChild(lab_Huyen);
+            var reset_Huyen = document.createElement('div');
+            reset_Huyen.innerHTML = 'clear filter';
+            reset_Huyen.className = 'filterlabel';
+            reset_Huyen.onclick = function() {
+                var options = document.getElementById("sel_Huyen").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_Huyen.appendChild(reset_Huyen);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Khoantuoichua = document.createElement('div');
+            div_Khoantuoichua.id = "div_Khoantuoichua";
+            div_Khoantuoichua.className= "filterselect";
+            document.getElementById("menu").appendChild(div_Khoantuoichua);
+            sel_Khoantuoichua = document.createElement('select');
+            sel_Khoantuoichua.multiple = true;
+            sel_Khoantuoichua.size = 5;
+            sel_Khoantuoichua.id = "sel_Khoantuoichua";
+            var Khoantuoichua_options_str = "<option value='' unselected></option>";
+            sel_Khoantuoichua.onchange = function(){filterFunc()};
+            Khoantuoichua_options_str  += '<option value="100-300">100-300</option>';
+            Khoantuoichua_options_str  += '<option value="300-500">300-500</option>';
+            Khoantuoichua_options_str  += '<option value="50-100">50-100</option>';
+            Khoantuoichua_options_str  += '<option value="<50"><50</option>';
+            Khoantuoichua_options_str  += '<option value=">500">>500</option>';
+            sel_Khoantuoichua.innerHTML = Khoantuoichua_options_str;
+            div_Khoantuoichua.appendChild(sel_Khoantuoichua);
+            var lab_Khoantuoichua = document.createElement('div');
+            lab_Khoantuoichua.innerHTML = 'Khoan tuoi chua';
+            lab_Khoantuoichua.className = 'filterlabel';
+            div_Khoantuoichua.appendChild(lab_Khoantuoichua);
+            var reset_Khoantuoichua = document.createElement('div');
+            reset_Khoantuoichua.innerHTML = 'clear filter';
+            reset_Khoantuoichua.className = 'filterlabel';
+            reset_Khoantuoichua.onclick = function() {
+                var options = document.getElementById("sel_Khoantuoichua").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_Khoantuoichua.appendChild(reset_Khoantuoichua);
+        resetLabels([layer_SocTrang_Huyen_1]);
+        map.on("zoomend", function(){
+            resetLabels([layer_SocTrang_Huyen_1]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_SocTrang_Huyen_1]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_SocTrang_Huyen_1]);
+        });
+        </script>
+    </body>
+</html>
